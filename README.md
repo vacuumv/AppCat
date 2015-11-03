@@ -1,2 +1,2 @@
-# AppSentA
-App in iOS semtiment analysis
+# AppCosa
+iOS app comment sentiment analysis

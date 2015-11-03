@@ -1,12 +1,13 @@
 import csv
 from pprint import pprint
 import logging
-from apprecopreprocess.metafetcher import config
+
 from pymongo import MongoClient
+
+import config
 
 log = logging.getLogger(__name__)
 
-__revise__ = "0915"
 __author__ = 'Steve'
 
 required_fields = {
