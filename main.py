@@ -14,7 +14,7 @@ def download_all_app_comments():
     app_list = [str(a) for a in ids]
     for app_id in app_list:
         with open('{}_comment.json'.format(app_id),'w') as f:
-            json.dump(downloader.get_all_comments(app_id),f)
+            json.dump(downloader.get_app_comments(app_id),f)
 
         sleep(100)
 
@@ -32,7 +32,7 @@ def download_all_app_comments3():
     processor = InputProcessor()
     ids = processor.get_ids()
     app_list = [str(a) for a in ids]
-    downloader.get_all_comments(app_list[0])
+    downloader.get_app_comments(app_list[0])
 
 if __name__ == '__main__':
     download_all_app_comments2()

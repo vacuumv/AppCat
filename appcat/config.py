@@ -6,5 +6,6 @@ __date__ = '20151103'
 pool_size = 1
 
 # For mongodb
-mongodb_collect_name = "appCosa"
-mongodb_doc_name = "app"
+collect_name = "appCat"
+meta_doc_name = "appMeta"
+comment_doc_name = "appComment"

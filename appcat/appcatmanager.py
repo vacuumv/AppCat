@@ -3,6 +3,9 @@ import json
 import logging
 
 from concurrent.futures import ThreadPoolExecutor
+from utils.appreco import AppReco
+from appcat.preprocess.appdownloader import CommentDownloader, MetaDownloader
+from appcat.preprocess.commentprocessor import CommentProcessor
 
 import config
 
@@ -16,30 +19,42 @@ logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(asctime)s - %(
 
 class AppCatManager:
     """
-    Manipulate downloader and analyzer
+    Manipulate downloader, processor and analyzer
     """
 
     # TODO: Finish parallel processing
     def __init__(self):
-        self.downloader = CommentDownloader()
-        self.analyzer = SentimentAnalyzer()
+        self.comment_downloader = CommentDownloader()
+        self.meta_downloader = MetaDownloader()
+        self.comment_processor = CommentProcessor()
+        # self.analyzer = SentimentAnalyzer()
 
-    def analyze(self, app_id):
-        app = self.downloader.get_all_comments(app_id)
-        self.analyzer.analyze_app_plot(app)
+    def download_app_and_process(self, track_id):
+        """
 
-    def get_all_comments_from_app_list(self, app_id_list):
-        with ThreadPoolExecutor(max_workers=config.pool_size) as executor:
-            for app_id in app_id_list:
-                executor.submit(self.analyze, app_id)
+        :param track_id: app track id
+        :return:
+        """
+        self.meta_downloader.get_app_meta(track_id)
+        self.comment_downloader.get_app_comments(track_id)
+        self.comment_processor.process_one_app(track_id)
 
-    def download_all_comments_from_app_list(self, app_id_list):
-        with ThreadPoolExecutor(max_workers=config.pool_size) as executor:
-            for app_id in app_id_list:
-                executor.submit(self.downloader.get_all_comments, app_id)
+    def download_all_app_from_list(self, app_id_list, max_workers=4):
+        """
+        Given a app id list, download metadata and all the comments and do comment pre-process
+        :param app_id_list:
+        :return:
+        """
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            for track_id in app_id_list:
+                executor.submit(self.meta_downloader.get_app_meta, track_id)
+                executor.submit(self.comment_downloader.get_app_comments, track_id)
+                executor.submit(self.comment_processor.process_one_app, track_id)
 
-    def load_meta_name(self, track_id):
-        app_meta_url = "https://itunes.apple.com/lookup?id=" + str(track_id)
-        app_json = json.load(urllib2.urlopen(app_meta_url))
-
-        return app_json["results"][0]["trackName"]
+if __name__ == '__main__':
+    reco = AppReco()
+    id_list = reco.get_genre_list()
+    print(len(id_list))
+    manager = AppCatManager()
+    # manager.download_app_and_process("303766373")
+    manager.download_all_app_from_list(id_list)
