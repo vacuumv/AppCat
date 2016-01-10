@@ -1,5 +1,5 @@
 import logging
-
+import datetime
 from pymongo import MongoClient
 from concurrent.futures import ThreadPoolExecutor
 
@@ -44,6 +44,12 @@ class CommentProcessor:
         app = self.comment_db.find_one({"_id": track_id})
         self.process_app(app)
 
+    def update_one(self, track_id):
+        self.comment_db.update_one({"_id": track_id}, {"$set": {"lastModified": datetime.datetime.now()}})
+
+    def get_app(self, track_id):
+        return self.comment_db.find_one({"_id": track_id})
+
     def process_app(self, app):
         """
         Given a app, process its comments and store it back to mongodb
@@ -60,7 +66,8 @@ class CommentProcessor:
         """
         comments = []
         track_id = app["trackId"]
-        if not app.has_key("comments_new"):
+
+        if "lastModified" not in app or app["lastModified"].month != datetime.datetime.now().month:
             log.info("Start processing {}.".format(track_id))
 
             for comment in app["comments"]:
@@ -76,10 +83,17 @@ class CommentProcessor:
                 comments.append(comment_after)
 
             self.comment_db.find_one_and_update({"_id": track_id},
-                                                {"$set": {"comments_new": comments}},
+                                                {"$set": {"comments": comments,
+                                                          "lastModified": datetime.datetime.now()},
+                                                 "$unset": {"comments_new": ""}},
                                                 upsert=True)
             log.info("{} has been sentenced, translated and stored.".format(track_id))
 
         else:
             log.info("{} has already been sentenced, translated and stored before.".format(track_id))
             pass
+
+
+if __name__ == '__main__':
+    processor = CommentProcessor()
+    processor.update_one("303766373")

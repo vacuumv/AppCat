@@ -34,7 +34,7 @@ class CommentCorpusLoader:
     def find_comment_by_keyword(self, keyword):
         """
         Query mongodb to find if specific keyword appeared in app comments
-        :param keyword:
+        :param keyword: the keyword you want
         :return: query result
         """
         log.info("Querying keyword [{}]...".format(keyword))
@@ -138,24 +138,21 @@ class CommentCorpusLoader:
         return self.corpus if with_rating == False else self.corpus_rating
 
     def generate_dictionary(self):
+        # TODO: Add words to dictionary
         self.dictionary = defaultdict(int)
         d = enchant.Dict('en_US')
         for doc in self.corpus:
             for token in doc:
                 self.dictionary[token] += 1
 
-
-        result=[]
+        result = []
         for item in self.dictionary.iteritems():
             if not d.check(item[0]):
                 result.append(item)
 
-        result=sorted(result,key=lambda item:item[1],reverse=True)
+        result = [r for r in sorted(result, key=lambda item: item[1], reverse=True) if r[1]>50]
         pprint(result)
         print(len(result))
-
-
-
 
 # class CommentCorpusProcessor:
 #     def __init__(self):

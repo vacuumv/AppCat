@@ -8,35 +8,8 @@ from textblob import TextBlob
 from textblob import exceptions
 
 __author__ = 'Steve'
+__version__ = '2.1'
 log = logging.getLogger(__name__)
-
-
-def translate(sentence):
-    """
-    Translate sentence to English in unicode format
-    :param sentence: sentence in any language
-    :return: english sentence in utf-8 format or empty string if translatorError occurs
-    """
-    # Ignore portions of a string that can't convert to utf-8
-    if not isinstance(sentence, unicode):
-        sentence = sentence.decode('utf-8', 'ignore')
-    tb = TextBlob(sentence)
-    try:
-        result = unicode(tb.translate())
-    except exceptions.NotTranslated:
-        result = sentence
-    except exceptions.TranslatorError:
-        result = ""
-
-    return result
-
-
-def is_not_stop_word(word):
-    """
-    :param word: any word in English
-    :return: true if this word is not english stop words
-    """
-    return word not in get_stop_words('en')
 
 
 class NLProcessor:
@@ -48,8 +21,28 @@ class NLProcessor:
     def __init__(self):
 
         self.stemmer = PorterStemmer()
-        self.tokenizer = RegexpTokenizer(r'[a-zA-Z]+')
+        self.tokenizer = RegexpTokenizer(r'[0-9a-zA-Z\']+')
         self.lemmatizer = WordNetLemmatizer()
+
+    @staticmethod
+    def translate(sentence):
+        """
+        Translate sentence to English in unicode format
+        :param sentence: sentence in any language
+        :return: english sentence in utf-8 format or empty string if translatorError occurs
+        """
+        # Ignore portions of a string that can't convert to utf-8
+        if not isinstance(sentence, unicode):
+            sentence = sentence.decode('utf-8', 'ignore')
+        tb = TextBlob(sentence)
+        try:
+            result = unicode(tb.translate())
+        except exceptions.NotTranslated:
+            result = sentence
+        except exceptions.TranslatorError:
+            result = ""
+
+        return result
 
     def get_eng_sentences(self, paragraph):
         """
@@ -58,7 +51,7 @@ class NLProcessor:
         :param paragraph: parapraph in any language
         :return: list of english sentences
         """
-        eng_paragraph = translate(paragraph)
+        eng_paragraph = self.translate(paragraph)
         tb = TextBlob(eng_paragraph)
         result = [s.raw for s in tb.sentences]
         log.debug((paragraph, result))
@@ -79,7 +72,7 @@ class NLProcessor:
 
         # filter stop words
         log.debug("Filtering stop words")
-        tokens = filter(is_not_stop_word, tokens)
+        tokens = filter(lambda word: word not in get_stop_words('en'), tokens)
         log.debug(tokens)
 
         if option == 'lemmatize':
@@ -96,3 +89,12 @@ class NLProcessor:
             pass
 
         return tokens
+
+    def paragraph_to_tokens(self, paragraph):
+        """
+        Given a paragraph in any language, translate it and tokenize it.
+        :param paragraph: Paragraph in any language
+        :return: List of tokens
+        """
+        eng_paragraph = self.translate(paragraph)
+        return self.sentence_to_tokens(eng_paragraph)
