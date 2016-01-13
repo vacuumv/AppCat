@@ -2,14 +2,14 @@ import logging
 import re
 import sys
 import time
-import enchant
 from pprint import pprint
-from pymongo import MongoClient
-from gensim import corpora
 from collections import defaultdict
 
+import enchant
+from pymongo import MongoClient
+
 import utils.appreco
-import appcat.config
+import config
 from utils.bcolors import bcolors
 
 __author__ = 'Steve'
@@ -20,16 +20,13 @@ __revised__ = 'ok'
 log = logging.getLogger(__name__)
 
 
-# logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(asctime)s - %(message)s')
-
-
 class CommentCorpusLoader:
     """
     Load single or all app comment in corpus.
     """
 
     def __init__(self):
-        self.comment_db = MongoClient()[appcat.config.mongodb_collect_name][appcat.config.mongodb_doc_name]
+        self.comment_db = MongoClient()[config.mongodb_collect_name][config.mongodb_doc_name]
 
     def find_comment_by_keyword(self, keyword):
         """

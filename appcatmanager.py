@@ -1,13 +1,10 @@
-import urllib2
-import json
 import logging
 
 from concurrent.futures import ThreadPoolExecutor
+
 from utils.appreco import AppReco
 from appcat.preprocess.appdownloader import CommentDownloader, MetaDownloader
 from appcat.preprocess.commentprocessor import CommentProcessor
-
-import config
 
 __author__ = 'Steve'
 __status__ = 'Development'
@@ -50,6 +47,7 @@ class AppCatManager:
                 executor.submit(self.meta_downloader.get_app_meta, track_id)
                 executor.submit(self.comment_downloader.get_app_comments, track_id)
                 executor.submit(self.comment_processor.process_one_app, track_id)
+
 
 if __name__ == '__main__':
     reco = AppReco()
