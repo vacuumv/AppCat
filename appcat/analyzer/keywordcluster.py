@@ -1,8 +1,11 @@
 __author__ = 'Steve'
 
-import logging, multiprocessing
+import logging
+import multiprocessing
+
 from gensim.models.word2vec import Word2Vec
-from appcat.analyzer.corpusloader import CommentCorpusLoader
+
+from appcat.preprocess.corpusloader import CommentCorpusLoader
 
 log = logging.getLogger(__name__)
 

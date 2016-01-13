@@ -4,7 +4,7 @@ import logging
 from gensim import corpora
 from gensim.models.ldamulticore import LdaMulticore
 
-from appcat.analyzer.corpusloader import CorpusProcessor
+from appcat.preprocess.corpusloader import CorpusProcessor
 
 # log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(asctime)s - %(message)s')

@@ -1,6 +1,8 @@
-import logging, json
+import logging
+import json
 from pprint import pprint
-from appcat.analyzer.corpusloader import CommentCorpusLoader
+
+from appcat.preprocess.corpusloader import CommentCorpusLoader
 
 __author__ = 'Steve'
 __status__ = 'Development'

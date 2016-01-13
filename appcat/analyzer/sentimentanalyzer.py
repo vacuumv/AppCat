@@ -8,7 +8,7 @@ __status__ = 'Development'
 __date__ = '20151103'
 log = logging.getLogger(__name__)
 
-logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(asctime)s - %(message)s')
+# logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(asctime)s - %(message)s')
 
 
 class SentimentAnalyzer:

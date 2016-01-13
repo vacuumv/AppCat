@@ -7,11 +7,13 @@ from appcat.preprocess.appdownloader import CommentDownloader, MetaDownloader
 from appcat.preprocess.commentprocessor import CommentProcessor
 
 __author__ = 'Steve'
-__status__ = 'Development'
 __date__ = '20151103'
-log = logging.getLogger(__name__)
+__revise__ = "20160110"
+__version__ = '2.2'
+__status__ = 'Development'
+__revised__ = 'Yes'
 
-logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(asctime)s - %(message)s')
+log = logging.getLogger(__name__)
 
 
 class AppCatManager:
@@ -43,7 +45,7 @@ class AppCatManager:
         :return:
         """
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            for track_id in app_id_list:
+            for track_id in sorted(app_id_list):
                 executor.submit(self.meta_downloader.get_app_meta, track_id)
                 executor.submit(self.comment_downloader.get_app_comments, track_id)
                 executor.submit(self.comment_processor.process_one_app, track_id)

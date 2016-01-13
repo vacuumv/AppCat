@@ -1,17 +1,22 @@
 import logging
 import datetime
+
 from pymongo import MongoClient
 from concurrent.futures import ThreadPoolExecutor
 
-import appcat.config
+import config
 from utils.nlprocessor import NLProcessor
 
 __author__ = 'Steve'
+__date__ = '20160110'
+__revise__ = "20160110"
+__version__ = '2.2'
 __status__ = 'Development'
-__revise__ = 'yes'
+__revised__ = 'Yes'
+
 log = logging.getLogger(__name__)
 
-logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(asctime)s - %(message)s')
+# logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(asctime)s - %(message)s')
 
 
 class CommentProcessor:
@@ -21,7 +26,7 @@ class CommentProcessor:
     """
 
     def __init__(self):
-        self.comment_db = MongoClient()[appcat.config.collect_name][appcat.config.comment_doc_name]
+        self.comment_db = MongoClient()[config.collect_name][config.comment_doc_name]
         self.processor = NLProcessor()
 
     @DeprecationWarning
@@ -33,7 +38,7 @@ class CommentProcessor:
         id_list = []
         for app in self.comment_db.find({}, no_cursor_timeout=True).sort("_id"):
             id_list.append(app["trackId"])
-        with ThreadPoolExecutor(max_workers=appcat.config.pool_size) as executor:
+        with ThreadPoolExecutor(max_workers=config.pool_size) as executor:
             for app_id in id_list:
                 executor.submit(self.process_one_app, app_id)
 

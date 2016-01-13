@@ -13,9 +13,11 @@ import config
 from utils.bcolors import bcolors
 
 __author__ = 'Steve'
-__status__ = 'Development'
 __date__ = '20151103'
-__revised__ = 'ok'
+__revise__ = "20160110"
+__version__ = '0.9'
+__status__ = 'Development'
+__revised__ = 'Yes'
 
 log = logging.getLogger(__name__)
 
@@ -26,7 +28,8 @@ class CommentCorpusLoader:
     """
 
     def __init__(self):
-        self.comment_db = MongoClient()[config.mongodb_collect_name][config.mongodb_doc_name]
+        self.comment_db = MongoClient()[config.collect_name][config.comment_doc_name]
+        self.pwl = config.project_folder + "appcatPwl.txt"
 
     def find_comment_by_keyword(self, keyword):
         """
@@ -39,9 +42,9 @@ class CommentCorpusLoader:
 
         for app in self.comment_db.find({}, no_cursor_timeout=True).sort("_id"):
             comment_list = []
-            for index, comment in enumerate(app["comments_new"]):
+            for index, comment in enumerate(app["comments"]):
                 content = comment["content"]
-                for sentence in comment["sentences_eng"]:
+                for sentence in comment["sentencesEng"]:
                     tokens = sentence["tokens"]
                     result = re.findall(keyword, tokens)
                     if len(result) > 0:
@@ -57,6 +60,13 @@ class CommentCorpusLoader:
         if genre name is all then not genre is specified
         """
         return utils.appreco.AppReco().get_genre_list(genre_name)[:limit]
+
+    def get_all_id_of_processed_app_in_db(self, limit=100):
+        id_list = []
+        for app in self.comment_db.find().sort("_id"):
+            if app["preprocessed"]:
+                id_list.append(app["trackId"])
+        return id_list[:limit]
 
     def load_comments_from_ids(self, track_ids, ratings="12345"):
         """
@@ -81,7 +91,10 @@ class CommentCorpusLoader:
 
         sys.stdout.write("\n")
         time.sleep(2)
-        return comment_comments_list
+
+        self.corpus_rating = comment_comments_list
+        self.corpus = [c[0] for c in comment_comments_list]
+        log.info("Corpus loaded with length {}.".format(len(comment_comments_list)))
 
     def load_comment_tokens_from_single_app(self, track_id, ratings="12345"):
         """
@@ -93,63 +106,75 @@ class CommentCorpusLoader:
         :return: list of comments [[[tokens],rating],[],...,[]]
 
         """
-        # log.error(track_id)
+        log.debug(track_id)
         app = self.comment_db.find_one({"_id": str(track_id)})
         if app is not None:
             comment_comments_list = []
-            if app.has_key("comments_new"):
-                for comment in app["comments_new"]:
+            if app['preprocessed']:
+                for comment in app["comments"]:
                     rating = str(comment["rating"])
                     if rating in ratings:
                         comment_tokens = []
-                        for sentence in comment["sentences_eng"]:
-                            # fucking handling single char
-                            tokens = [t for t in sentence["tokens"].split(" ") if len(t) > 1]
-                            # print(tokens)
-                            comment_tokens = comment_tokens + tokens
+                        for sentence in comment["sentencesEng"]:
+                            comment_tokens = comment_tokens + sentence["tokens"]
                         if len(comment_tokens) > 0:
                             comment_comments_list.append([comment_tokens, rating])
             return comment_comments_list
         else:
             return None
 
-    def load_all_comments_from_genre(self, genre_name="All", limit=100, ratings="12345"):
-        """
-        Get all comments from apps belong to specific genre
+    # def load_all_comments_from_genre(self, genre_name="All", limit=100, ratings="12345"):
+    #     """
+    #     Get all comments from apps belong to specific genre
+    #
+    #     :param genre_name: genre name in app store, default all
+    #     :param limit: numbers of apps you want, default 100
+    #     :param ratings: ratings of comments you want, default all (1,2,3,4,5)
+    #     :param with_rating: if true each comment will contains second element i.e. rating
+    #     :return: list of (comment tokens(list),comment ratings)
+    #     """
+    #
+    #     ids = self.get_id_of_genre(genre_name, limit=limit)
+    #     comments = self.load_comments_from_ids(ids, ratings=ratings)
+    #
+    #     self.corpus_rating = comments
+    #     self.corpus = [c[0] for c in comments]
+    #     log.info("Corpus loaded with length {}.".format(len(comments)))
 
-        :param genre_name: genre name in app store, default all
-        :param limit: numbers of apps you want, default 100
-        :param ratings: ratings of comments you want, default all (1,2,3,4,5)
-        :param with_rating: if true each comment will contains second element i.e. rating
-        :return: list of (comment tokens(list),comment ratings)
-        """
-
-        ids = self.get_id_of_genre(genre_name, limit=limit)
-        comments = self.load_comments_from_ids(ids, ratings=ratings)
-
-        self.corpus_rating = comments
-        self.corpus = [c[0] for c in comments]
-        log.info("Corpus loaded with length {}.".format(len(comments)))
 
     def get_corpus(self, with_rating=False):
         return self.corpus if with_rating == False else self.corpus_rating
 
-    def generate_dictionary(self):
-        # TODO: Add words to dictionary
+    def generate_personal_word_list(self, minimal_appear_count=100):
+        """
+        Generate enchant personal word list (pwl) from all comments
+         if a word is not in english but appears
+         more than 100 times in all comments
+        :return:
+        """
+
         self.dictionary = defaultdict(int)
         d = enchant.Dict('en_US')
         for doc in self.corpus:
             for token in doc:
                 self.dictionary[token] += 1
 
-        result = []
-        for item in self.dictionary.iteritems():
-            if not d.check(item[0]):
-                result.append(item)
+        word_list = [item for item in self.dictionary.iteritems() if not d.check(item[0])]
+        word_list = [r for r in sorted(word_list, key=lambda item: item[1], reverse=True) if
+                     r[1] > minimal_appear_count]
+        dict_pwl = enchant.request_pwl_dict(self.pwl)
+        added = 0
+        for word in word_list:
+            w = str(word[0])
+            if not dict_pwl.check(w):
+                dict_pwl.add(w)
+                added += 1
+                print(w)
+        log.info("{} words not in English but appears in comments more than {} times.".format(len(word_list),
+                                                                                              minimal_appear_count))
+        log.info("Of those {} words, {} has already exists in pwl, the rest {} ones has been added to pwl".format(
+            len(word_list), len(word_list) - added, added))
 
-        result = [r for r in sorted(result, key=lambda item: item[1], reverse=True) if r[1]>50]
-        pprint(result)
-        print(len(result))
 
 # class CommentCorpusProcessor:
 #     def __init__(self):

@@ -3,9 +3,10 @@ import json
 import logging
 import re
 import datetime
+
 from pymongo import MongoClient
 
-import appcat.config
+import config
 
 __author__ = 'Steve'
 __date__ = '20160110'
@@ -26,7 +27,7 @@ class CommentDownloader:
     download_url = "https://itunes.apple.com/rss/customerreviews/id=%s/sortby=mostrecent/page=%s/json"
 
     def __init__(self):
-        self.comment_db = MongoClient()[appcat.config.collect_name][appcat.config.comment_doc_name]
+        self.comment_db = MongoClient()[config.collect_name][config.comment_doc_name]
 
     def get_app_comments(self, track_id):
         """
@@ -97,7 +98,7 @@ class MetaDownloader:
     ]
 
     def __init__(self):
-        self.meta_db = MongoClient()[appcat.config.collect_name][appcat.config.meta_doc_name]
+        self.meta_db = MongoClient()[config.collect_name][config.meta_doc_name]
 
     def get_app_meta(self, track_id):
         """
